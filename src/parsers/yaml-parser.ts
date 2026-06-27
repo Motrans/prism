@@ -357,6 +357,33 @@ function manualExtractProxy(str: string): ProxyNode | null {
       }
     }
 
+    // 尝试解析 YAML 内联对象（如 plugin-opts: {mode: http, host: xxx}）
+    if (typeof value === 'string' && value.startsWith('{') && value.endsWith('}')) {
+      const inner = value.slice(1, -1).trim();
+      if (inner) {
+        const subPairs = splitTopLevel(inner);
+        const subObj: Record<string, unknown> = {};
+        for (const sp of subPairs) {
+          const scIdx = sp.indexOf(':');
+          if (scIdx === -1) continue;
+          const sk = sp.substring(0, scIdx).trim().replace(/^['"]|['"]$/g, '');
+          let sv: unknown = sp.substring(scIdx + 1).trim();
+          if (typeof sv === 'string') {
+            if ((sv.startsWith("'") && sv.endsWith("'")) || (sv.startsWith('"') && sv.endsWith('"'))) {
+              sv = sv.slice(1, -1);
+            }
+            if (sv === 'true') sv = true;
+            else if (sv === 'false') sv = false;
+            else if (/^\d+$/.test(sv)) sv = parseInt(sv, 10);
+          }
+          subObj[sk] = sv;
+        }
+        value = subObj;
+      } else {
+        value = {};
+      }
+    }
+
     if (value === 'true') value = true;
     else if (value === 'false') value = false;
     else if (/^\d+$/.test(value as string)) value = parseInt(value as string, 10);

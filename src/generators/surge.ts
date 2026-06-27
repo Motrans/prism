@@ -58,9 +58,10 @@ export function generateSurgeConfig(
         allNodeNames.includes(p) || groups.some(g => g.name === p)
       );
       const proxyStr = validProxies.join(', ');
-      lines.push(`${group.name} = ${groupType}, ${proxyStr}`);
       if ((group.groupType === 'url-test' || group.groupType === 'fallback') && group.url) {
         lines.push(`${group.name} = ${groupType}, ${proxyStr}, url = ${group.url}, interval = ${group.interval || 300}`);
+      } else {
+        lines.push(`${group.name} = ${groupType}, ${proxyStr}`);
       }
     }
     lines.push('');

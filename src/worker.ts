@@ -40,7 +40,7 @@ app.get('/sub', async (c: Context) => {
     let upstreamUserInfo: string | null = null;
     try {
       const response = await fetch(params.url, {
-        headers: { 'User-Agent': 'Prism/1.0' },
+        headers: { 'User-Agent': 'clash-verge/2.0' },
       });
       if (!response.ok) {
         return c.text(`错误：无法下载订阅链接，HTTP ${response.status}`, 502);
@@ -70,7 +70,7 @@ app.get('/sub', async (c: Context) => {
     if (params.config) {
       try {
         const configResponse = await fetch(params.config, {
-          headers: { 'User-Agent': 'Prism/1.0' },
+          headers: { 'User-Agent': 'clash-verge/2.0' },
         });
         if (configResponse.ok) {
           const iniContent = await configResponse.text();
@@ -82,7 +82,7 @@ app.get('/sub', async (c: Context) => {
             .map(async (entry: RulesetEntry) => {
               try {
                 const ruleResponse = await fetch(entry.url, {
-                  headers: { 'User-Agent': 'Prism/1.0' },
+                  headers: { 'User-Agent': 'clash-verge/2.0' },
                 });
                 if (ruleResponse.ok) {
                   const text = await ruleResponse.text();
@@ -110,16 +110,9 @@ app.get('/sub', async (c: Context) => {
     // 生成目标格式
     let output: string;
     let contentType: string;
-    const extMap: Record<string, string> = { clash: '.yaml', singbox: '.json', surge: '.conf' };
-    const ext = extMap[params.target] || '.yaml';
-
-    // 决定订阅名称和下载文件名
-    const baseFilename = params.filename || 'Prism';
-    // 去掉用户可能误填的扩展名（保留纯名称）
-    const cleanBase = baseFilename.replace(/\.(yaml|json|conf)$/i, '');
-    // 下载用完整文件名
-    const filename = cleanBase + ext;
-    // ★ 订阅名称就是 cleanBase（不含扩展名），Clash Verge 读取 profile-title 或 Content-Disposition
+    // 决定订阅名称
+    const cleanBase = (params.filename || "Prism").replace(/\.(yaml|json|conf)$/i, "");
+    // ★ 订阅名称不含扩展名，Clash Verge 读取 profile-title 或 Content-Disposition
 
     switch (params.target) {
       case 'clash':
