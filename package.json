@@ -1,0 +1,21 @@
+{
+  "name": "prism",
+  "version": "1.0.0",
+  "description": "跨格式代理订阅转换工具，可部署至 Cloudflare Workers",
+  "main": "src/worker.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "build": "esbuild src/worker.ts --bundle --outfile=dist/worker.js --format=esm --target=es2022"
+  },
+  "dependencies": {
+    "hono": "^4.0.0",
+    "js-yaml": "^4.1.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240620.0",
+    "esbuild": "^0.21.0",
+    "wrangler": "^3.61.0",
+    "typescript": "^5.5.0"
+  }
+}

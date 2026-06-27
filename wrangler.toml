@@ -1,0 +1,19 @@
+name = "prism"
+main = "src/worker.ts"
+compatibility_date = "2024-12-01"
+
+# 免费计划每日 10 万请求以内
+# KV Namespace 可用于规则缓存（可选）
+# [[kv_namespaces]]
+# binding = "RULE_CACHE"
+# id = "YOUR_KV_ID"
+
+[observability]
+enabled = true
+
+[vars]
+# 你的 Worker 部署后的域名，用于自引用
+SELF_URL = "https://prism.YOUR-SUBDOMAIN.workers.dev"
+
+[build]
+command = "esbuild src/worker.ts --bundle --outfile=dist/worker.js --format=esm --target=es2022"

@@ -1,0 +1,12 @@
+# npm 依赖
+node_modules/
+
+# Wrangler 构建输出
+dist/
+
+# Wrangler 缓存与状态
+.wrangler/
+
+# 环境变量
+.env
+.env.*
