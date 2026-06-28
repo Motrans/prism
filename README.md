@@ -1,27 +1,29 @@
 # Prism
 
-跨格式代理订阅转换工具，可部署至 Cloudflare Workers。
+[English](README.md) | [简体中文](docs/README.zh-Hans.md) | [繁體中文](docs/README.zh-Hant.md) | [日本語](docs/README.ja.md) | [한국어](docs/README.ko.md) | [Русский](docs/README.ru.md) | [Tiếng Việt](docs/README.vi.md) | [العربية](docs/README.ar.md) | [فارسی](docs/README.fa.md)
 
-## 支持格式
+Cross-format proxy subscription converter, deployable to Cloudflare Workers.
 
-| 格式 | 作为源 | 作为输出 |
-|------|:---:|:---:|
+## Supported Formats
+
+| Format | As Source | As Output |
+|--------|:---------:|:---------:|
 | Clash / Mihomo (YAML) | ✅ | ✅ |
 | sing-box (JSON) | ⚠️ | ⚠️ |
 | Surge (INI) | ⚠️ | ⚠️ |
 
-> ⚠️ sing-box 与 Surge 的导入与转换功能**尚未验证可用性**，可能存在兼容性问题。
+> ⚠️ sing-box and Surge import/export functionality **has not been verified** and may contain compatibility issues.
 
-## 快速部署
+## Quick Deploy
 
-### 方式一：Cloudflare Dashboard 网页端部署
+### Option 1: Cloudflare Dashboard
 
-1. Fork 本仓库到你的 GitHub
-2. 登录 [Cloudflare Dashboard](https://dash.cloudflare.com)，进入 **Workers 和 Pages**
-3. 点击 **创建应用程序** → **Continue with GitHub**
-4. 选择你 Fork 的仓库 → **下一步** → **部署**
+1. Fork this repository to your GitHub
+2. Log in to the [Cloudflare Dashboard](https://dash.cloudflare.com) and go to **Workers & Pages**
+3. Click **Create application** → **Connect to GitHub**
+4. Select your forked repository → **Next** → **Deploy**
 
-### 方式二：Wrangler CLI 部署
+### Option 2: Wrangler CLI
 
 ```bash
 git clone https://github.com/Motrans/prism.git
@@ -31,24 +33,27 @@ npm run build
 npx wrangler deploy
 ```
 
-## 项目结构
+## Project Structure
 
 ```
 src/
-├── worker.ts          # Worker 路由 + 转换 API
+├── worker.ts          # Worker routes + conversion API
 ├── frontend/
-│   └── index.ts       # 前端页面
+│   ├── index.ts       # Entry point, assembles frontend HTML
+│   ├── css.ts         # Stylesheet (grayscale palette, RTL, responsive)
+│   ├── body.ts        # HTML body (form, dropdowns, controls)
+│   └── script.ts      # Client-side JS (theme, i18n, dropdown)
 ├── parsers/
-│   ├── ini-parser.ts  # .ini 规则配置解析
-│   └── yaml-parser.ts # Clash YAML 订阅解析
+│   ├── ini-parser.ts  # .ini rule config parser
+│   └── yaml-parser.ts # Clash YAML subscription parser
 ├── generators/
-│   ├── clash.ts       # Clash 格式输出
-│   ├── singbox.ts     # sing-box 格式输出
-│   └── surge.ts       # Surge 格式输出
+│   ├── clash.ts       # Clash YAML output
+│   ├── singbox.ts     # sing-box JSON output
+│   └── surge.ts       # Surge INI output
 └── utils/
-    └── types.ts       # 类型定义 + 默认参数
+    └── types.ts       # Type definitions + default parameters
 ```
 
-## 许可
+## License
 
 MIT © 2026 Zhong Zhiyu. All rights reserved.
