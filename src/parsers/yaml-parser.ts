@@ -33,7 +33,7 @@ function extractProxies(lines: string[]): ProxyNode[] {
     const trimmed = line.trim();
 
     // 检测 proxies: 开始
-    if (!inProxies && trimmed === 'proxies:' || trimmed.startsWith('proxies:')) {
+    if (!inProxies && (trimmed === 'proxies:' || trimmed.startsWith('proxies:'))) {
       inProxies = true;
       continue;
     }
@@ -258,7 +258,8 @@ function extractRules(lines: string[]): string[] {
  * 提取顶级简单字段
  */
 function extractTopLevelFields(lines: string[], config: ClashConfig): void {
-  for (const line of lines) {
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
     const trimmed = line.trim();
     if (!trimmed || trimmed.startsWith('#') || trimmed.startsWith('proxies:')
       || trimmed.startsWith('proxy-groups:') || trimmed.startsWith('rules:')
@@ -272,7 +273,29 @@ function extractTopLevelFields(lines: string[], config: ClashConfig): void {
     const key = trimmed.substring(0, colonIdx).trim();
     const rawVal = trimmed.substring(colonIdx + 1).trim();
 
-    if (!rawVal && line.endsWith(':')) continue; // 嵌套块
+    // 处理嵌套块：dns: / hosts:
+    if ((!rawVal || rawVal === '{}') && (key === 'dns' || key === 'hosts')) {
+      const blockLines: string[] = [];
+      const baseIndent = line.length - line.trimStart().length + 2; // 嵌套缩进
+      let j = i + 1;
+      while (j < lines.length) {
+        const nextLine = lines[j];
+        const nextIndent = nextLine.length - nextLine.trimStart().length;
+        if (nextIndent < baseIndent && nextLine.trim() !== '') break;
+        if (nextIndent >= baseIndent || nextLine.trim() === '') {
+          blockLines.push(nextLine);
+        }
+        j++;
+      }
+      if (key === 'hosts') {
+        config.hosts = parseSimpleDict(blockLines);
+      } else {
+        config.dns = parseSimpleDict(blockLines) as Record<string, unknown>;
+      }
+      continue;
+    }
+
+    if (!rawVal && line.endsWith(':')) continue; // 其他嵌套块跳过
 
     const value = extractYamlValue(rawVal);
 
@@ -289,6 +312,23 @@ function extractTopLevelFields(lines: string[], config: ClashConfig): void {
       (config as Record<string, unknown>)[key] = value;
     }
   }
+}
+
+/**
+ * 解析简单的 YAML 缩进字典
+ */
+function parseSimpleDict(lines: string[]): Record<string, string> {
+  const result: Record<string, string> = {};
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const idx = trimmed.indexOf(':');
+    if (idx <= 0) continue;
+    const k = trimmed.substring(0, idx).trim();
+    const v = trimmed.substring(idx + 1).trim();
+    if (v) result[k] = extractYamlValue(v);
+  }
+  return result;
 }
 
 // ============================================================
@@ -374,7 +414,7 @@ function manualExtractProxy(str: string): ProxyNode | null {
             }
             if (sv === 'true') sv = true;
             else if (sv === 'false') sv = false;
-            else if (/^\d+$/.test(sv)) sv = parseInt(sv, 10);
+            else if (typeof sv === 'string' && /^\d+$/.test(sv)) sv = parseInt(sv, 10);
           }
           subObj[sk] = sv;
         }

@@ -480,6 +480,13 @@ export const FRONTEND_HTML = `<!DOCTYPE html>
     themeIcon.innerHTML = ICONS[currentTheme];
   }
 
+  function setThemeCookie(effective) {
+    try {
+      var maxAge = 31536000; // 1 年
+      document.cookie = 'prism-theme=' + effective + '; path=/; SameSite=Lax; max-age=' + maxAge;
+    } catch(e) {}
+  }
+
   function applyTheme() {
     var effective = getEffectiveTheme();
     if (effective === 'light') {
@@ -487,6 +494,7 @@ export const FRONTEND_HTML = `<!DOCTYPE html>
     } else {
       document.documentElement.removeAttribute('data-theme');
     }
+    setThemeCookie(effective);
     updateIcon();
   }
 

@@ -65,6 +65,16 @@ export function generateSurgeConfig(
       }
     }
     lines.push('');
+  } else if (sourceConfig['proxy-groups'] && sourceConfig['proxy-groups'].length > 0) {
+    // 无外部 config 时，从原始订阅生成策略组
+    lines.push('[Proxy Group]');
+    for (const group of sourceConfig['proxy-groups']) {
+      const groupType = mapSurgeGroupType(group.type || 'select');
+      const proxies = (group.proxies || []).join(', ');
+      if (!proxies) continue;
+      lines.push(`${group.name} = ${groupType}, ${proxies}`);
+    }
+    lines.push('');
   }
 
   // ---- Rule 规则 ----
@@ -88,6 +98,19 @@ export function generateSurgeConfig(
             }
           }
         }
+      }
+    }
+    lines.push('');
+  } else if (sourceConfig.rules && sourceConfig.rules.length > 0) {
+    // 无外部 config 时，从原始订阅生成规则
+    lines.push('[Rule]');
+    for (const rule of sourceConfig.rules) {
+      if (!rule || rule.startsWith('#')) continue;
+      const converted = convertRuleToSurge(rule);
+      if (converted) {
+        const parts = rule.split(',');
+        const target = parts.length >= 2 ? parts[parts.length - 1].trim() : 'DIRECT';
+        lines.push(`${converted},${target}`);
       }
     }
     lines.push('');
@@ -168,9 +191,21 @@ function convertNodeToSurgeProxy(node: ProxyNode, params: ConversionParams): str
 
     case 'vmess': {
       let extra = '';
+      // 根据 network 决定传输参数
+      if (node.network === 'ws') {
+        extra += ', ws=true';
+        if (node['ws-opts']?.path) extra += `, ws-path=${node['ws-opts'].path}`;
+        if (node['ws-opts']?.headers && (node['ws-opts'].headers as Record<string, unknown>)['Host']) extra += `, sni=${(node['ws-opts'].headers as Record<string, unknown>)['Host']}`;
+      } else if (node.network === 'grpc') {
+        // Surge 不原生支持 gRPC，跳过传输相关参数
+        extra += ', tls=true';
+      } else if (node.network === 'h2') {
+        extra += ', tls=true';
+      }
+      if (node.tls && node.network !== 'ws') extra += ', tls=true';
       if (params.tfo) extra += ', tfo=true';
       if (params.udp || node.udp) extra += ', udp-relay=true';
-      return `${safeName} = vmess, ${node.server}, ${node.port}, username=${node.uuid || ''}, ws=true${extra}`;
+      return `${safeName} = vmess, ${node.server}, ${node.port}, username=${node.uuid || ''}${extra}`;
     }
 
     case 'vless': {
@@ -187,8 +222,9 @@ function convertNodeToSurgeProxy(node: ProxyNode, params: ConversionParams): str
       return `${safeName} = socks5, ${node.server}, ${node.port}${node.username ? `, username=${node.username}` : ''}${node.password ? `, password=${node.password}` : ''}`;
 
     default:
-      // 不支持的节点类型，尝试作为 ss 输出
-      return `${safeName} = ss, ${node.server}, ${node.port}, encrypt-method=${node.cipher || 'aes-128-gcm'}, password=${node.password || ''}`;
+      // 不支持的节点类型（ssr/hysteria2/snell/tuic 等），跳过
+      console.warn(`[Surge] 不支持的节点类型: ${node.type} (${node.name})，已跳过`);
+      return null;
   }
 }
 

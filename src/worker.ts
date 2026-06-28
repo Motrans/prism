@@ -5,6 +5,7 @@
 
 import { Hono } from 'hono';
 import type { Context } from 'hono';
+import { getCookie } from 'hono/cookie';
 import { parseClashYaml } from './parsers/yaml-parser';
 import { parseIniConfig } from './parsers/ini-parser';
 import { generateClashConfig } from './generators/clash';
@@ -20,6 +21,14 @@ const app = new Hono();
 // 路由：前端页面
 // ============================================================
 app.get('/', (c: Context) => {
+  const theme = getCookie(c, 'prism-theme');
+  if (theme === 'light' || theme === 'dark') {
+    const html = FRONTEND_HTML.replace(
+      '<html lang="zh-CN">',
+      `<html lang="zh-CN" data-theme="${theme}">`
+    );
+    return c.html(html);
+  }
   return c.html(FRONTEND_HTML);
 });
 
@@ -177,36 +186,17 @@ function parseQueryParams(c: Context): ConversionParams {
     target: (q['target'] as OutputTarget) || DEFAULT_PARAMS.target,
     url: q['url'] || DEFAULT_PARAMS.url,
     config: q['config'] || undefined,
-    group: q['group'] || undefined,
-    upload_path: q['upload_path'] || undefined,
     include: q['include'] || undefined,
     exclude: q['exclude'] || undefined,
-    dev_id: q['dev_id'] || undefined,
     filename: q['filename'] || undefined,
-    interval: q['interval'] ? parseInt(q['interval'], 10) : undefined,
-    rename: q['rename'] || undefined,
-    filter_script: q['filter_script'] || undefined,
-    strict: parseBool(q['strict']) ?? DEFAULT_PARAMS.strict,
-    upload: parseBool(q['upload']) ?? DEFAULT_PARAMS.upload,
     emoji: parseBool(q['emoji']) ?? DEFAULT_PARAMS.emoji,
-    add_emoji: parseBool(q['add_emoji']) ?? DEFAULT_PARAMS.add_emoji,
-    remove_emoji: parseBool(q['remove_emoji']) ?? DEFAULT_PARAMS.remove_emoji,
     append_type: parseBool(q['append_type']) ?? DEFAULT_PARAMS.append_type,
     tfo: parseBool(q['tfo']) ?? DEFAULT_PARAMS.tfo,
     udp: parseBool(q['udp']) ?? DEFAULT_PARAMS.udp,
-    list: parseBool(q['list']) ?? DEFAULT_PARAMS.list,
     sort: parseBool(q['sort']) ?? DEFAULT_PARAMS.sort,
-    sort_script: q['sort_script'] || undefined,
-    script: parseBool(q['script']) ?? DEFAULT_PARAMS.script,
-    insert: parseBool(q['insert']) ?? DEFAULT_PARAMS.insert,
     scv: parseBool(q['scv']) ?? DEFAULT_PARAMS.scv,
-    fdn: parseBool(q['fdn']) ?? DEFAULT_PARAMS.fdn,
     expand: parseBool(q['expand']) ?? DEFAULT_PARAMS.expand,
-    append_info: parseBool(q['append_info']) ?? DEFAULT_PARAMS.append_info,
-    prepend: parseBool(q['prepend']) ?? DEFAULT_PARAMS.prepend,
-    classic: parseBool(q['classic']) ?? DEFAULT_PARAMS.classic,
     tls13: parseBool(q['tls13']) ?? DEFAULT_PARAMS.tls13,
-    new_name: parseBool(q['new_name']) ?? DEFAULT_PARAMS.new_name,
   };
 }
 

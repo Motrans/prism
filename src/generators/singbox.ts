@@ -37,12 +37,13 @@ export function generateSingboxConfig(
   };
 
   // ---- Inbounds ----
+  const inPort = sourceConfig.port || sourceConfig['mixed-port'] || 2080;
   config.inbounds = [
     {
       type: 'mixed',
       tag: 'mixed-in',
       listen: '::',
-      listen_port: 2080,
+      listen_port: inPort,
     },
   ];
 
@@ -68,10 +69,34 @@ export function generateSingboxConfig(
   config.outbounds = outbounds;
 
   // ---- Routes ----
-  // ★ sing-box 本身不能直接解析 Clash 规则，所以只在有外部 .ini 配置时才生成路由
+  const rules: unknown[] = [];
+
   if (params.config && iniConfig.rulesetEntries.length > 0) {
-    expandPlaceholderProxies(iniConfig.customProxyGroups, allNodeNames); // 展开占位符
-    const rules: unknown[] = [];
+    // 展开 .* 占位符
+    const expandedGroups = expandPlaceholderProxies(iniConfig.customProxyGroups, allNodeNames);
+
+    // 生成 selector/urltest 出站组
+    for (const group of expandedGroups) {
+      const members = group.proxies.filter(p => allNodeNames.includes(p) || ['DIRECT', 'REJECT'].includes(p));
+      if (members.length === 0) continue;
+      const tag = group.name;
+      if (group.groupType === 'url-test') {
+        (outbounds as unknown[]).push({
+          type: 'urltest',
+          tag,
+          outbounds: members,
+          url: group.url || 'http://www.gstatic.com/generate_204',
+          interval: group.interval ? `${group.interval}s` : '300s',
+        });
+      } else {
+        (outbounds as unknown[]).push({
+          type: 'selector',
+          tag,
+          outbounds: members.length > 1 ? members : [...members, 'DIRECT'],
+          default: members[0],
+        });
+      }
+    }
 
     for (const entry of iniConfig.rulesetEntries) {
       if (entry.isSpecial && entry.specialType === 'FINAL') {
@@ -92,7 +117,19 @@ export function generateSingboxConfig(
         }
       }
     }
+  } else {
+    // 无外部 config 时，从原始订阅生成默认路由
+    for (const rule of sourceConfig.rules || []) {
+      const singboxRule = convertRuleToSingbox(rule);
+      if (singboxRule) {
+        const parts = rule.split(',');
+        const target = parts.length >= 2 ? parts[parts.length - 1].trim() : 'DIRECT';
+        rules.push({ ...singboxRule, outbound: target });
+      }
+    }
+  }
 
+  if (rules.length > 0) {
     config.route = { rules, auto_detect_interface: true };
   }
 
@@ -213,15 +250,16 @@ function convertRuleToSingbox(rule: string): Record<string, unknown> | null {
  * 转换 Clash DNS 为 sing-box DNS
  */
 function convertSingboxDns(config: ClashConfig): Record<string, unknown> {
-  const dns: Record<string, unknown> = {
+  // 优先使用源配置的 DNS，否则使用通用 DNS
+  if (config.dns) return config.dns as Record<string, unknown>;
+
+  return {
     servers: [
-      { tag: 'local', address: 'https://doh.pub/dns-query', detour: 'DIRECT' },
-      { tag: 'remote', address: 'https://1.1.1.1/dns-query' },
+      { tag: 'remote', address: 'tls://1.1.1.1/dns-query' },
+      { tag: 'remote-backup', address: 'tls://dns.google/dns-query' },
     ],
     rules: [
-      { outbound: 'any', server: 'local' },
-      { rule_set: 'geosite-cn', server: 'local' },
+      { outbound: 'any', server: 'remote' },
     ],
   };
-  return dns;
 }

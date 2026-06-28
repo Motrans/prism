@@ -92,41 +92,22 @@ export interface CustomProxyGroup {
   interval?: number;
 }
 
-/** 订阅转换请求参数 */
+/** 订阅转换请求参数 — 仅保留被生成器实际使用的参数 */
 export interface ConversionParams {
   target: OutputTarget;
   url: string;
   config?: string;
-  group?: string;
-  upload_path?: string;
   include?: string;
   exclude?: string;
-  dev_id?: string;
   filename?: string;
-  interval?: number;
-  rename?: string;
-  filter_script?: string;
-  strict?: boolean;
-  upload?: boolean;
   emoji?: boolean;
-  add_emoji?: boolean;
-  remove_emoji?: boolean;
   append_type?: boolean;
   tfo?: boolean;
   udp?: boolean;
-  list?: boolean;
   sort?: boolean;
-  sort_script?: string;
-  script?: boolean;
-  insert?: boolean;
   scv?: boolean;
-  fdn?: boolean;
   expand?: boolean;
-  append_info?: boolean;
-  prepend?: boolean;
-  classic?: boolean;
   tls13?: boolean;
-  new_name?: boolean;
 }
 
 /** 转换后的输出内容 */
@@ -143,23 +124,11 @@ export const DEFAULT_PARAMS: ConversionParams = {
   target: 'clash',
   url: '',
   emoji: true,
-  add_emoji: true,
-  remove_emoji: true,
   append_type: false,
   tfo: false,
   udp: false,
-  list: false,
   sort: false,
-  insert: false,
   scv: false,
-  fdn: true,
   expand: true,
-  append_info: true,
-  prepend: true,
-  classic: false,
   tls13: false,
-  new_name: false,
-  strict: false,
-  upload: false,
-  script: false,
 };
