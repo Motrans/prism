@@ -24,8 +24,8 @@ app.get('/', (c: Context) => {
   const theme = getCookie(c, 'prism-theme');
   if (theme === 'light' || theme === 'dark') {
     const html = FRONTEND_HTML.replace(
-      '<html lang="zh-CN">',
-      `<html lang="zh-CN" data-theme="${theme}">`
+      '<html lang="zh-Hans">',
+      `<html lang="zh-Hans" data-theme="${theme}">`
     );
     return c.html(html);
   }
