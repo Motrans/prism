@@ -6,17 +6,17 @@
 import type { ClashConfig, ProxyNode, ProxyGroup } from '../utils/types';
 
 export function parseClashYaml(content: string): ClashConfig {
-  const result: ClashConfig = { proxies: [] };
+  const result: ClashConfig = {} as ClashConfig;
   const lines = content.split('\n');
 
+  // ---- 提取其他顶级字段（先插入以保留原始段顺序） ----
+  extractTopLevelFields(lines, result);
   // ---- 提取 proxies ----
   result.proxies = extractProxies(lines);
   // ---- 提取 proxy-groups ----
   result['proxy-groups'] = extractProxyGroups(lines);
   // ---- 提取 rules ----
   result.rules = extractRules(lines);
-  // ---- 提取其他顶级字段 ----
-  extractTopLevelFields(lines, result);
 
   return result;
 }
@@ -263,7 +263,7 @@ function extractTopLevelFields(lines: string[], config: ClashConfig): void {
     const trimmed = line.trim();
     if (!trimmed || trimmed.startsWith('#') || trimmed.startsWith('proxies:')
       || trimmed.startsWith('proxy-groups:') || trimmed.startsWith('rules:')
-      || trimmed.startsWith('-') || trimmed.startsWith(' ')) {
+      || trimmed.startsWith('-') || line.startsWith(' ')) {
       continue;
     }
 
@@ -273,8 +273,8 @@ function extractTopLevelFields(lines: string[], config: ClashConfig): void {
     const key = trimmed.substring(0, colonIdx).trim();
     const rawVal = trimmed.substring(colonIdx + 1).trim();
 
-    // 处理嵌套块：dns: / hosts:
-    if ((!rawVal || rawVal === '{}') && (key === 'dns' || key === 'hosts')) {
+    // 处理嵌套块：任意顶级键无内联值时，收集子块解析
+    if (!rawVal || rawVal === '{}') {
       const blockLines: string[] = [];
       const baseIndent = line.length - line.trimStart().length + 2; // 嵌套缩进
       let j = i + 1;
@@ -288,9 +288,12 @@ function extractTopLevelFields(lines: string[], config: ClashConfig): void {
         j++;
       }
       if (key === 'hosts') {
-        config.hosts = parseSimpleDict(blockLines);
+        config.hosts = parseNestedDict(blockLines) as Record<string, string>;
+      } else if (key === 'dns') {
+        config.dns = parseNestedDict(blockLines);
       } else {
-        config.dns = parseSimpleDict(blockLines) as Record<string, unknown>;
+        // 未知顶级嵌套块（如 cfw-bypass）→ 通过 index signature 保留
+        config[key] = parseNestedDict(blockLines);
       }
       continue;
     }
@@ -315,19 +318,109 @@ function extractTopLevelFields(lines: string[], config: ClashConfig): void {
 }
 
 /**
- * 解析简单的 YAML 缩进字典
+ * 解析 YAML 嵌套块 — 支持映射、序列、简单值、内联流式语法
+ * 返回类型取决于块结构：映射返回对象，序列返回数组
  */
-function parseSimpleDict(lines: string[]): Record<string, string> {
-  const result: Record<string, string> = {};
+function parseNestedDict(lines: string[]): unknown {
+  // 计算基准缩进
+  let baseIndent = Infinity;
   for (const line of lines) {
     const trimmed = line.trim();
     if (!trimmed || trimmed.startsWith('#')) continue;
-    const idx = trimmed.indexOf(':');
-    if (idx <= 0) continue;
-    const k = trimmed.substring(0, idx).trim();
-    const v = trimmed.substring(idx + 1).trim();
-    if (v) result[k] = extractYamlValue(v);
+    const indent = line.length - line.trimStart().length;
+    if (indent < baseIndent) baseIndent = indent;
   }
+  if (!isFinite(baseIndent)) baseIndent = 0;
+
+  // 判断顶级结构是序列还是映射
+  const firstLine = lines.find(l => {
+    const t = l.trim();
+    return t && !t.startsWith('#');
+  });
+  if (firstLine && firstLine.trim().startsWith('- ')) {
+    // 顶级序列（如 cfw-bypass 下的 IP 列表）
+    const items: unknown[] = [];
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) continue;
+      if (trimmed.startsWith('- ')) {
+        const itemVal = extractYamlValue(trimmed.substring(2).trim());
+        items.push(parseYamlFlow(itemVal));
+      }
+    }
+    return items;
+  }
+
+  // 顶级映射
+  const result: Record<string, unknown> = {};
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i];
+    const trimmed = line.trim();
+    const indent = line.length - line.trimStart().length;
+
+    // 只处理基准缩进的行
+    if (!trimmed || trimmed.startsWith('#') || indent !== baseIndent) {
+      i++;
+      continue;
+    }
+
+    const colonIdx = trimmed.indexOf(':');
+    if (colonIdx <= 0) {
+      i++;
+      continue;
+    }
+
+    const key = trimmed.substring(0, colonIdx).trim();
+    const rawVal = trimmed.substring(colonIdx + 1).trim();
+
+    if (rawVal) {
+      // 有内联值 → 先提取标量，再尝试解析 YAML 流式语法
+      const extracted = extractYamlValue(rawVal);
+      result[key] = parseYamlFlow(extracted);
+      i++;
+    } else {
+      // 无内联值 → 查看后续行决定是序列还是映射
+      const subLines: string[] = [];
+      let j = i + 1;
+      while (j < lines.length) {
+        const nextLine = lines[j];
+        const nextTrimmed = nextLine.trim();
+        const nextIndent = nextLine.length - nextLine.trimStart().length;
+        if (!nextTrimmed || nextTrimmed.startsWith('#')) {
+          // 空行 / 注释：属于当前块但跳过
+          j++;
+          continue;
+        }
+        if (nextIndent <= baseIndent) break; // 回到基准缩进，结束子块
+        subLines.push(nextLine);
+        j++;
+      }
+
+      if (subLines.length > 0) {
+        const firstSub = subLines[0].trim();
+        if (firstSub.startsWith('- ')) {
+          // 映射下的序列值
+          const items: unknown[] = [];
+          for (const sl of subLines) {
+            const st = sl.trim();
+            if (st.startsWith('- ')) {
+              const itemVal = extractYamlValue(st.substring(2).trim());
+              items.push(parseYamlFlow(itemVal));
+            }
+          }
+          result[key] = items;
+        } else {
+          // 嵌套映射
+          result[key] = parseNestedDict(subLines);
+        }
+      } else {
+        result[key] = '';
+      }
+      i = j;
+    }
+  }
+
   return result;
 }
 
@@ -350,6 +443,101 @@ function extractYamlValue(raw: string): string {
     s = s.slice(1, -1);
   }
   return s;
+}
+
+/**
+ * 解析 YAML 内联流式语法：序列 [...] 和映射 {...}
+ * 用于 DNS 段中 nameserver: ['...'] / nameserver-policy: {'*.d': [...]} 等格式
+ */
+function parseYamlFlow(raw: string): unknown {
+  const s = raw.trim();
+  if (s.startsWith('[') && s.endsWith(']')) {
+    // 流式序列
+    const inner = s.slice(1, -1).trim();
+    if (!inner) return [];
+    return splitYamlFlow(inner).map(item => {
+      const v = extractYamlValue(item.trim());
+      // 递归解析嵌套流式值
+      return parseYamlFlow(v);
+    });
+  }
+  if (s.startsWith('{') && s.endsWith('}')) {
+    // 流式映射
+    const inner = s.slice(1, -1).trim();
+    if (!inner) return {};
+    // 尝试 JSON 化后解析
+    try {
+      const jsonSafe = simpleJsonify(`{${inner}}`);
+      return JSON.parse(jsonSafe);
+    } catch {
+      // 回退：手动拆分键值对
+      const obj: Record<string, unknown> = {};
+      const pairs = splitYamlFlow(inner);
+      for (const pair of pairs) {
+        const colonIdx = pair.indexOf(':');
+        if (colonIdx <= 0) continue;
+        const k = extractYamlValue(pair.substring(0, colonIdx).trim());
+        const v = parseYamlFlow(extractYamlValue(pair.substring(colonIdx + 1).trim()));
+        obj[k] = v;
+      }
+      return obj;
+    }
+  }
+  // 标量：推断布尔/空/数字类型
+  return coerceScalar(s);
+}
+
+/**
+ * YAML 标量类型推断：true/false → boolean, null/~ → null, 数字 → number
+ */
+function coerceScalar(s: string): unknown {
+  if (s === 'true') return true;
+  if (s === 'false') return false;
+  if (s === 'null' || s === '~') return null;
+  if (/^-?\d+(\.\d+)?$/.test(s)) return Number(s);
+  return s;
+}
+
+/**
+ * 按逗号拆分 YAML 流式内容，尊重嵌套括号和引号深度
+ */
+function splitYamlFlow(content: string): string[] {
+  const result: string[] = [];
+  let depth = 0;    // {} 嵌套深度
+  let bracket = 0;  // [] 嵌套深度
+  let inStr: string | null = null; // 当前引号类型 ' 或 "
+  let current = '';
+
+  for (let i = 0; i < content.length; i++) {
+    const ch = content[i];
+
+    if (inStr) {
+      current += ch;
+      if (ch === inStr && content[i - 1] !== '\\') inStr = null;
+      continue;
+    }
+
+    if (ch === "'" || ch === '"') {
+      inStr = ch;
+      current += ch;
+      continue;
+    }
+
+    if (ch === '{') { depth++; current += ch; continue; }
+    if (ch === '}') { depth--; current += ch; continue; }
+    if (ch === '[') { bracket++; current += ch; continue; }
+    if (ch === ']') { bracket--; current += ch; continue; }
+
+    if (ch === ',' && depth === 0 && bracket === 0) {
+      result.push(current);
+      current = '';
+    } else {
+      current += ch;
+    }
+  }
+
+  if (current) result.push(current);
+  return result;
 }
 
 function simpleJsonify(str: string): string {

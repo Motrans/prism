@@ -535,9 +535,14 @@ function generateSubscription() {
   filename = filename.replace(/\\\\.(yaml|json|conf)$/i, '');
   params.set('filename', filename);
 
+  var defaults = { emoji: true, tfo: false, udp: false, scv: false, sort: false, expand: true, append_type: false, tls13: false };
+  var isAdvanced = document.getElementById('advanced').classList.contains('show');
   ['emoji','tfo','udp','scv','sort','expand','append_type','tls13'].forEach(function(id) {
     var el = document.getElementById(id);
-    if (el) params.set(id, el.checked ? 'true' : 'false');
+    if (el) {
+      var val = el.checked;
+      if (isAdvanced || val !== defaults[id]) params.set(id, val ? 'true' : 'false');
+    }
   });
 
   var include = document.getElementById('include').value.trim();
