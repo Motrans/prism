@@ -99,6 +99,7 @@ export interface ConversionParams {
   config?: string;
   include?: string;
   exclude?: string;
+  rename?: string;
   filename?: string;
   emoji?: boolean;
   append_type?: boolean;

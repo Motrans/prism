@@ -99,6 +99,12 @@ export const HEAD = `<!DOCTYPE html>
   }
   .form-group { margin-bottom: 14px; }
   .form-group label { display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 5px; font-weight: 500; line-height: 1.3; }
+  .url-row { display: flex; gap: 6px; margin-bottom: 6px; }
+  .url-row input { flex: 1; }
+  .url-row-del { align-self: stretch; min-width: 38px; padding: 0 12px; background: none; border: 1px solid var(--border); border-radius: var(--radius); color: var(--text-secondary); cursor: pointer; font-size: 1.1rem; font-weight: 600; display: flex; align-items: center; justify-content: center; transition: border-color 0.2s, color 0.2s; }
+  .url-row-del:hover { border-color: var(--accent); color: var(--text); }
+  .btn-add-url { margin-top: 2px; padding: 6px 12px; background: none; border: 1px dashed var(--border); border-radius: var(--radius); color: var(--text-secondary); cursor: pointer; font-size: 0.82rem; line-height: 1.3; transition: border-color 0.2s, color 0.2s; }
+  .btn-add-url:hover { border-color: var(--accent); color: var(--text); }
   .form-group input, .form-group select {
     width: 100%; padding: 10px 12px; background: var(--input-bg);
     border: 1px solid var(--border); border-radius: var(--radius);

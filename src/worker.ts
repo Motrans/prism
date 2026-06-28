@@ -11,7 +11,7 @@ import { parseIniConfig } from './parsers/ini-parser';
 import { generateClashConfig } from './generators/clash';
 import { generateSingboxConfig } from './generators/singbox';
 import { generateSurgeConfig } from './generators/surge';
-import type { ConversionParams, OutputTarget, ParsedIniConfig, RulesetEntry } from './utils/types';
+import type { ClashConfig, ConversionParams, OutputTarget, ParsedIniConfig, RulesetEntry } from './utils/types';
 import { DEFAULT_PARAMS } from './utils/types';
 import { FRONTEND_HTML } from './frontend/index';
 
@@ -44,28 +44,41 @@ app.get('/sub', async (c: Context) => {
       return c.text('错误：缺少 url 参数（原始订阅链接）', 400);
     }
 
-    // 获取原始订阅内容，同时捕获原始订阅的流量/到期信息头
-    let sourceContent: string;
-    let upstreamUserInfo: string | null = null;
-    try {
-      const response = await fetch(params.url, {
-        headers: { 'User-Agent': 'clash-verge/2.0' },
-      });
-      if (!response.ok) {
-        return c.text(`错误：无法下载订阅链接，HTTP ${response.status}`, 502);
-      }
-      upstreamUserInfo = response.headers.get('subscription-userinfo');
-      sourceContent = await response.text();
-    } catch (err) {
-      return c.text(`错误：下载订阅链接失败 - ${(err as Error).message}`, 502);
-    }
-
-    // 解析原始订阅
+    // 获取原始订阅（支持用 | 分隔多个 URL 合并）
+    const urls = params.url.split('|').filter(Boolean);
     let sourceConfig;
-    try {
-      sourceConfig = parseClashYaml(sourceContent);
-    } catch (err) {
-      return c.text(`错误：解析订阅内容失败 - ${(err as Error).message}`, 400);
+    let upstreamUserInfo: string | null = null;
+
+    if (urls.length === 1) {
+      try {
+        const response = await fetch(urls[0], {
+          headers: { 'User-Agent': 'clash-verge/2.0' },
+        });
+        if (!response.ok) {
+          return c.text(`错误：无法下载订阅链接，HTTP ${response.status}`, 502);
+        }
+        upstreamUserInfo = response.headers.get('subscription-userinfo');
+        sourceConfig = parseClashYaml(await response.text());
+      } catch (err) {
+        return c.text(`错误：下载或解析订阅失败 - ${(err as Error).message}`, 502);
+      }
+    } else {
+      // 多订阅合并
+      try {
+        const results = await Promise.all(urls.map(async (url) => {
+          const response = await fetch(url, {
+            headers: { 'User-Agent': 'clash-verge/2.0' },
+          });
+          if (!response.ok) throw new Error(`HTTP ${response.status} from ${url}`);
+          if (!upstreamUserInfo) {
+            upstreamUserInfo = response.headers.get('subscription-userinfo');
+          }
+          return parseClashYaml(await response.text());
+        }));
+        sourceConfig = mergeConfigs(results);
+      } catch (err) {
+        return c.text(`错误：下载或解析订阅失败 - ${(err as Error).message}`, 502);
+      }
     }
 
     if (!sourceConfig.proxies || sourceConfig.proxies.length === 0) {
@@ -188,6 +201,7 @@ function parseQueryParams(c: Context): ConversionParams {
     config: q['config'] || undefined,
     include: q['include'] || undefined,
     exclude: q['exclude'] || undefined,
+    rename: q['rename'] || undefined,
     filename: q['filename'] || undefined,
     emoji: parseBool(q['emoji']) ?? DEFAULT_PARAMS.emoji,
     append_type: parseBool(q['append_type']) ?? DEFAULT_PARAMS.append_type,
@@ -206,6 +220,18 @@ function parseBool(value: string | undefined): boolean | undefined {
   if (lower === 'true' || lower === '1') return true;
   if (lower === 'false' || lower === '0') return false;
   return undefined;
+}
+
+function mergeConfigs(configs: ClashConfig[]): ClashConfig {
+  const base = configs[0];
+  const allProxies = configs.flatMap(c => c.proxies);
+  const seen = new Set<string>();
+  const merged = allProxies.filter(p => {
+    if (seen.has(p.name)) return false;
+    seen.add(p.name);
+    return true;
+  });
+  return { ...base, proxies: merged };
 }
 
 function createDefaultIniConfig(): ParsedIniConfig {

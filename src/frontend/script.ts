@@ -269,6 +269,7 @@ var I18N = {
     btnGenerate: '生成订阅链接', labelResult: '生成的订阅链接：',
     btnCopy: '复制链接', btnDownload: '下载配置',
     msgEnterUrl: '请输入订阅链接', msgGenerated: '订阅链接已生成',
+    labelRename: '节点重命名（可选）', placeholderRename: '如 香港@HK|日本@JP', btnAddUrl: '添加订阅链接',
     msgCopied: '已复制到剪贴板', msgDownloadStarted: '下载已开始', msgDownloadFailed: '下载失败',
   },
   'en': {
@@ -287,6 +288,7 @@ var I18N = {
     btnGenerate: 'Generate Subscription', labelResult: 'Subscription URL:',
     btnCopy: 'Copy URL', btnDownload: 'Download Config',
     msgEnterUrl: 'Please enter a subscription URL', msgGenerated: 'Subscription URL generated',
+    labelRename: 'Rename Nodes (optional)', placeholderRename: 'e.g. HK@HongKong|JP@Japan', btnAddUrl: 'Add Subscription',
     msgCopied: 'Copied to clipboard', msgDownloadStarted: 'Download started', msgDownloadFailed: 'Download failed',
   },
   'ar': {
@@ -306,6 +308,7 @@ var I18N = {
     btnGenerate: 'إنشاء رابط الاشتراك', labelResult: 'رابط الاشتراك:',
     btnCopy: 'نسخ الرابط', btnDownload: 'تنزيل التكوين',
     msgEnterUrl: 'يرجى إدخال رابط الاشتراك', msgGenerated: 'تم إنشاء رابط الاشتراك',
+    labelRename: 'إعادة تسمية العقد (اختياري)', placeholderRename: 'مثال: HK@HongKong|JP@Japan', btnAddUrl: 'إضافة اشتراك',
     msgCopied: 'تم النسخ إلى الحافظة', msgDownloadStarted: 'بدأ التنزيل', msgDownloadFailed: 'فشل التنزيل',
   },
   'zh-Hant': {
@@ -324,6 +327,7 @@ var I18N = {
     btnGenerate: '生成訂閱連結', labelResult: '生成的訂閱連結：',
     btnCopy: '複製連結', btnDownload: '下載設定檔',
     msgEnterUrl: '請輸入訂閱連結', msgGenerated: '訂閱連結已生成',
+    labelRename: '節點重命名（可選）', placeholderRename: '如 HK@HongKong|JP@Japan', btnAddUrl: '新增訂閱連結',
     msgCopied: '已複製到剪貼簿', msgDownloadStarted: '下載已開始', msgDownloadFailed: '下載失敗',
   },
   'ja': {
@@ -342,6 +346,7 @@ var I18N = {
     btnGenerate: 'サブスクリプション URL を生成', labelResult: '生成された URL:',
     btnCopy: 'URL をコピー', btnDownload: '設定をダウンロード',
     msgEnterUrl: 'サブスクリプション URL を入力してください', msgGenerated: 'URL が生成されました',
+    labelRename: 'ノード名変更（任意）', placeholderRename: '例: HK@HongKong|JP@Japan', btnAddUrl: 'サブスクリプションを追加',
     msgCopied: 'クリップボードにコピーしました', msgDownloadStarted: 'ダウンロードを開始しました', msgDownloadFailed: 'ダウンロードに失敗しました',
   },
   'ko': {
@@ -360,6 +365,7 @@ var I18N = {
     btnGenerate: '구독 링크 생성', labelResult: '생성된 구독 URL:',
     btnCopy: 'URL 복사', btnDownload: '설정 다운로드',
     msgEnterUrl: '구독 URL을 입력하세요', msgGenerated: '구독 URL이 생성되었습니다',
+    labelRename: '노드 이름 변경 (선택사항)', placeholderRename: '예: HK@HongKong|JP@Japan', btnAddUrl: '구독 추가',
     msgCopied: '클립보드에 복사되었습니다', msgDownloadStarted: '다운로드가 시작되었습니다', msgDownloadFailed: '다운로드 실패',
   },
   'ru': {
@@ -378,6 +384,7 @@ var I18N = {
     btnGenerate: 'Сгенерировать ссылку', labelResult: 'Сгенерированный URL подписки:',
     btnCopy: 'Копировать URL', btnDownload: 'Скачать конфигурацию',
     msgEnterUrl: 'Введите URL подписки', msgGenerated: 'Ссылка подписки создана',
+    labelRename: 'Переименовать узлы (необязательно)', placeholderRename: 'напр. HK@HongKong|JP@Japan', btnAddUrl: 'Добавить подписку',
     msgCopied: 'Скопировано в буфер обмена', msgDownloadStarted: 'Загрузка началась', msgDownloadFailed: 'Ошибка загрузки',
   },
   'vi': {
@@ -396,6 +403,7 @@ var I18N = {
     btnGenerate: 'Tạo liên kết đăng ký', labelResult: 'URL đăng ký đã tạo:',
     btnCopy: 'Sao chép URL', btnDownload: 'Tải về cấu hình',
     msgEnterUrl: 'Vui lòng nhập URL đăng ký', msgGenerated: 'Đã tạo URL đăng ký',
+    labelRename: 'Đổi tên nút (tùy chọn)', placeholderRename: 'vd: HK@HongKong|JP@Japan', btnAddUrl: 'Thêm đăng ký',
     msgCopied: 'Đã sao chép vào clipboard', msgDownloadStarted: 'Bắt đầu tải xuống', msgDownloadFailed: 'Tải xuống thất bại',
   },
   'fa': {
@@ -414,6 +422,7 @@ var I18N = {
     btnGenerate: 'ایجاد لینک اشتراک', labelResult: 'لینک اشتراک ایجاد شده:',
     btnCopy: 'کپی URL', btnDownload: 'دانلود پیکربندی',
     msgEnterUrl: 'لطفاً URL اشتراک را وارد کنید', msgGenerated: 'لینک اشتراک ایجاد شد',
+    labelRename: 'تغییر نام سرور (اختیاری)', placeholderRename: 'مثال: HK@HongKong|JP@Japan', btnAddUrl: 'افزودن اشتراک',
     msgCopied: 'در کلیپ‌بورد کپی شد', msgDownloadStarted: 'دانلود آغاز شد', msgDownloadFailed: 'دانلود ناموفق بود',
   },
 
@@ -513,16 +522,20 @@ function setMode(mode) {
 }
 
 function generateSubscription() {
-  var urlEl = document.getElementById('url');
-  var url = urlEl.value.trim();
-  if (!url) {
+  var urlEls = document.querySelectorAll('.url-input');
+  var urls = [];
+  urlEls.forEach(function(el) {
+    var v = el.value.trim();
+    if (v) urls.push(v);
+  });
+  if (urls.length === 0) {
     showResult('msgEnterUrl');
     return;
   }
 
   var params = new URLSearchParams();
   params.set('target', document.getElementById('target').value);
-  params.set('url', url);
+  params.set('url', urls.join('|'));
 
   var configVal = document.getElementById('config-select').value.trim();
   if (configVal === '__custom__') {
@@ -532,7 +545,7 @@ function generateSubscription() {
 
   var filename = document.getElementById('filename').value.trim();
   if (!filename) filename = 'Prism';
-  filename = filename.replace(/\\\\.(yaml|json|conf)$/i, '');
+  filename = filename.replace(/\\.(yaml|json|conf)$/i, '');
   params.set('filename', filename);
 
   var defaults = { emoji: true, tfo: false, udp: false, scv: false, sort: false, expand: true, append_type: false, tls13: false };
@@ -549,12 +562,38 @@ function generateSubscription() {
   if (include) params.set('include', include);
   var exclude = document.getElementById('exclude').value.trim();
   if (exclude) params.set('exclude', exclude);
+  var rename = document.getElementById('rename').value.trim();
+  if (rename) params.set('rename', rename);
 
   var apiUrl = window.location.origin + '/sub?' + params.toString();
 
   document.getElementById('result-url').value = apiUrl;
   document.getElementById('result-section').style.display = 'block';
   setStatus('msgGenerated');
+}
+
+function addUrlRow() {
+  var container = document.getElementById('url-rows');
+  var row = document.createElement('div');
+  row.className = 'url-row';
+  row.innerHTML = '<input type="url" class="url-input" required><button class="url-row-del" onclick="removeUrlRow(this)" title="删除">×</button>';
+  container.appendChild(row);
+  updateUrlDelButtons();
+}
+
+function removeUrlRow(btn) {
+  var row = btn.parentElement;
+  row.remove();
+  updateUrlDelButtons();
+}
+
+function updateUrlDelButtons() {
+  var rows = document.querySelectorAll('.url-row');
+  // 仅剩一行时隐藏删除按钮
+  rows.forEach(function(row, i) {
+    var btn = row.querySelector('.url-row-del');
+    if (btn) btn.style.display = rows.length <= 1 ? 'none' : '';
+  });
 }
 
 function setStatus(key) {

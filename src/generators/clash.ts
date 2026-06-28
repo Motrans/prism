@@ -23,6 +23,7 @@ export function generateClashConfig(
 
   // 预计算过滤后的节点列表（proxy-groups 展开需要，独立于段顺序）
   let allNodes = applyNodeFilters(sourceConfig.proxies, params);
+  if (params.rename) allNodes = applyRenames(allNodes, params.rename);
   const seen = new Set<string>();
   allNodes = allNodes.filter(n => {
     const k = n.name;
@@ -237,6 +238,22 @@ function applyNodeFilters(nodes: ProxyNode[], params: ConversionParams): ProxyNo
   if (params.exclude) { try { const r=new RegExp(params.exclude); f=f.filter(n=>!r.test(n.name)); } catch {} }
   if (params.sort) f.sort((a, b) => a.name.localeCompare(b.name));
   return f;
+}
+
+function applyRenames(nodes: ProxyNode[], renameStr: string): ProxyNode[] {
+  const rules = renameStr.split('|').map(r => {
+    const idx = r.lastIndexOf('@');
+    if (idx === -1) return null;
+    return { pattern: r.slice(0, idx), replacement: r.slice(idx + 1) };
+  }).filter(Boolean) as { pattern: string; replacement: string }[];
+
+  return nodes.map(node => {
+    let name = node.name;
+    for (const rule of rules) {
+      try { name = name.replace(new RegExp(rule.pattern), rule.replacement); } catch {}
+    }
+    return name !== node.name ? { ...node, name } : node;
+  });
 }
 
 function sanitizeProviderName(name: string): string {

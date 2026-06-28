@@ -52,7 +52,13 @@ export const BODY = `<body>
 
     <div class="form-group">
       <label data-i18n="labelUrl">原始订阅链接</label>
-      <input type="url" id="url" required>
+      <div id="url-rows">
+        <div class="url-row">
+          <input type="url" class="url-input" required>
+          <button class="url-row-del" onclick="removeUrlRow(this)" title="删除" style="display:none">×</button>
+        </div>
+      </div>
+      <button class="btn-add-url" onclick="addUrlRow()" data-i18n="btnAddUrl">添加订阅链接</button>
     </div>
 
     <div class="form-group">
@@ -116,6 +122,10 @@ export const BODY = `<body>
         <label class="toggle-item" data-i18n="toggleExpand"><input type="checkbox" id="expand" checked> 展开规则全文</label>
         <label class="toggle-item" data-i18n="toggleAppendType"><input type="checkbox" id="append_type"> 节点名加类型标记</label>
         <label class="toggle-item" data-i18n="toggleTLS13"><input type="checkbox" id="tls13"> TLS 1.3</label>
+      </div>
+      <div class="form-group">
+        <label data-i18n="labelRename">节点重命名（可选）</label>
+        <input type="text" id="rename" data-i18n-placeholder="placeholderRename" placeholder="如 香港@HK|日本@JP">
       </div>
       <div class="form-row">
         <div class="form-group">

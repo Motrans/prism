@@ -178,17 +178,44 @@ export function expandPlaceholderProxies(
   allProxyNames: string[]
 ): CustomProxyGroup[] {
   return groups.map(group => {
-    const expanded = group.proxies.flatMap(proxy => {
-      if (proxy === '.*') {
-        // .* 正则匹配所有节点
-        return allProxyNames;
+    const seen = new Set<string>(); // 已匹配的节点名，避免 .* 重复添加
+    const expanded: string[] = [];
+
+    for (const proxy of group.proxies) {
+      if (proxy === '.*' || proxy.startsWith('.*')) {
+        // .* 只添加尚未被前面规则命中的节点
+        for (const name of allProxyNames) {
+          if (!seen.has(name)) {
+            expanded.push(name);
+            seen.add(name);
+          }
+        }
+      } else if (/^\(.+\)$/.test(proxy)) {
+        // 正则筛选：匹配含关键词的节点
+        let pattern = proxy.slice(1, -1);
+        let flags = '';
+        // 将 subconverter 的 PCRE 内联标志 (?i) 转为 JS RegExp 的 i flag
+        pattern = pattern.replace(/^\(\?([ims]+)\)/, function(_, f: string) {
+          flags = f.replace('s', ''); // JS 不支持 /s flag 的内联写法，忽略
+          return '';
+        });
+        try {
+          const regex = new RegExp(pattern, flags);
+          for (const name of allProxyNames) {
+            if (!seen.has(name) && regex.test(name)) {
+              expanded.push(name);
+              seen.add(name);
+            }
+          }
+        } catch {
+          expanded.push(proxy);
+        }
+      } else {
+        // 字面值：DIRECT、REJECT、组引用等
+        expanded.push(proxy);
       }
-      if (proxy.startsWith('.*')) {
-        // 带尾缀的正则，暂简化为全匹配
-        return allProxyNames;
-      }
-      return [proxy];
-    });
+    }
+
     return { ...group, proxies: expanded };
   });
 }
